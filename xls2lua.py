@@ -60,6 +60,8 @@ def gen_table(filename):
 
 	sidx = 0
 	for sheet in book.sheets():
+		if sidx >= 1: 
+			break;
 		sdict = {}
 		ridx = 0
 		for ridx in xrange(sheet.nrows):
@@ -147,10 +149,13 @@ def write_table(luaT, luaN, outfile = '-', withfunc = True):
 
 	outfp.write("local %s = {\n" % szName)
 	for sidx, sheet in luaT.iteritems():
-		outfp.write("[%d] = {\n"%(sidx + 1))
-		
 		#第一行为参考
 		head = sheet.get(0)
+		if head is None:
+			break;
+		
+		outfp.write("[%d] = {\n"%(sidx + 1))
+		
 		max_row = len(head)
 		for rowidx, row in sheet.iteritems():
 			#Notify: from row 3 start; index start from 0
@@ -166,6 +171,7 @@ def write_table(luaT, luaN, outfile = '-', withfunc = True):
 								s = "%s" % (col)
 							else:
 								s = "\"%s\""%(format_output(col))
+								# s = "[[%s]]"%(format_output(col))		--2015/06/03支持换行
 						# outfp.write("\t\t[%d] = %s,\n"%(colidx + 1, s))
 						name = "\"%s\""%(head.get(colidx))
 						outfp.write("\t\t[%s] = %s,\n"%(name, s))
@@ -186,13 +192,19 @@ def write_table(luaT, luaN, outfile = '-', withfunc = True):
 def transfer(dir_src, dir_dst):
 	if dir_dst[len(dir_dst) - 1] != '\\':
 		dir_dst = dir_dst + "\\"
+	# 创建dst_src的目录树
+	if not os.path.exists(dir_dst):
+		os.makedirs(dir_dst)
+		
 	names = os.listdir(dir_src)
+	tag = True;
 	for name in names:
 		name_temp = dir_src + "\\" + name
 
 		if os.path.isdir(name_temp): 
 			if tag is True:
-				transfer(name_temp, dir_dst)
+				dir_temp = dir_dst + name
+				transfer(name_temp, dir_temp)
 			else:
 				continue
 		if os.path.isfile(name_temp):
